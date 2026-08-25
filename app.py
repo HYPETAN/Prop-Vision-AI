@@ -7,11 +7,11 @@ import chromadb
 # 1. Initialize API
 app = FastAPI(
     title="Prop-Vision-AI Search API",
-    description="Multi-modal real estate search engine API",
-    version="1.0.0"
+    description="Multi-modal real estate search engine API backed by fine-tuned CLIP weights",
+    version="2.0.0"
 )
 
-# 2. Global variables to hold our model and DB (loaded on startup)
+# 2. Global variables to hold our model and DB
 chroma_client = None
 collection = None
 model = None
@@ -22,30 +22,35 @@ class SearchRequest(BaseModel):
     query: str
     top_k: int = 3
 
-# 4. Load Models on Startup
+# 4. Load Models and Fine-Tuned Weights on Startup
 @app.on_event("startup")
 async def load_infrastructure():
     global chroma_client, collection, model, tokenizer
-    print("Initializing Database & Models...")
+    print("Initializing Database & Fine-Tuned Models...")
     
     # Load DB
     chroma_client = chromadb.PersistentClient(path="./chroma_db")
     collection = chroma_client.get_collection(name="real_estate_properties")
     
-    # Load CLIP
+    # Load CLIP Base Model Structure
     model, _, _ = open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k')
     tokenizer = open_clip.get_tokenizer('ViT-B-32')
-    print("Infrastructure loaded and ready!")
     
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Prop-Vision-AI Engine. Go to /docs to test the API."}
+    # Load your custom fine-tuned weights!
+    try:
+        model.load_state_dict(torch.load("clip_realestate_finetuned.pt"))
+        print("Successfully loaded fine-tuned weights into FastAPI server!")
+    except FileNotFoundError:
+        print("Warning: Fine-tuned weights not found. Running on base pre-trained weights.")
+        
+    model.eval()
+    print("Infrastructure fully loaded and ready!")
 
 # 5. Create the Search Endpoint
 @app.post("/search")
 async def search_properties(request: SearchRequest):
     try:
-        # Embed the text query
+        # Embed the text query using the fine-tuned text encoder
         text_input = tokenizer([request.query])
         with torch.no_grad():
             text_embedding = model.encode_text(text_input).tolist()[0]
