@@ -1,0 +1,5 @@
+prop-vision-env/
+__pycache__/
+images/
+chroma_db/
+.DS_Store
