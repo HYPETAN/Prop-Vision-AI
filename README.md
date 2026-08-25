@@ -69,4 +69,5 @@ streamlit run ui.py
 ## Future Improvements & Scalability
 While the current architecture serves as a functional MVP on a limited local subset, the system is engineered to scale. Future iterations will include:
 * Dataset Scaling: Ingesting 50,000+ property images into distributed ChromaDB clusters to lower distance scores and maximize recall.
+* High-Performance C++ Extension: Designing a low-level C++ core module integrated via PyBind11 to handle high-frequency vector distance sorting and metadata reranking under strict sub-50ms enterprise latency budgets.
 * Containerization: Packaging the microservices using Docker and Docker Compose for seamless cloud orchestration on AWS EC2.
